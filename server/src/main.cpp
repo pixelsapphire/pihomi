@@ -1,52 +1,28 @@
 #include <string>
-
 #include "server.hpp"
-#include "devices.hpp"
 
-bool serverRunning=false;
+bool serverRunning = false;
 int ssock;
-void ctrl_c(int)
-{
-    write(ssock,"stopping",9);
-    serverRunning=false;
+
+void ctrl_c(int) {
+    serverRunning = false;
+    std::exit(0);
 }
 
-struct Test
-{
-    std::thread ttrd;
-    ~Test()
-    {
-        ttrd.join();
-    }
-    void tf()
-    {
-        std::cout << "UwU\n";
-        for(int i = 0 ; i<5;i++)
-        {
-            std::cout << i <<std::endl;
-        }
-    }
-    void uwu()
-    {
-        std::cout << "UwU\n";
-        ttrd = std::thread(&Test::tf,this);
-    }
-};
+#include <wiringSerial.h>
 
-int main(int argc,char** argv)
-{
+int main(int argc, char** argv) {
     if (argc < 2) {
         std::cerr << "Serial port has to be specified.\n";
         return -1;
     }
-    serverRunning=true;
+    serverRunning = true;
     signal(SIGINT, ctrl_c);
-    Server server(std::stoi("3141"),argv[1]);
-    ssock=server.sock();
-    while (serverRunning)
-    {
-
-    }
+    Server server(3141, argv[1]);
     
+    ssock = server.sock();
+    while (serverRunning) {}
+    pthread_cancel(server.serverThread.native_handle());
+
     return 0;
 }

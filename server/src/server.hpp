@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "client.hpp"
-#include "devices.hpp"
+#include "controller.hpp"
 
 extern bool serverRunning;
 extern void ctrl_c(int);
@@ -27,14 +27,17 @@ struct Server
 {
     int _sock;
     int _epollFd;
-    DeviceController devicecontroller;
+    std::array<bool,4> socks;
+    phm::controller controller;
     std::thread serverThread;
+    std::vector<Client*> clients;
     public:
-        Server(uint port,std::string serial);
+        Server(uint32_t port,std::string serial);
         ~Server();
         int sock() const;
         void handleEvent(uint32_t events);
         void serverLoop();
+        void inter();
         
 };
 

@@ -8,14 +8,19 @@ void setReuseAddr(int sock)
     if(res) error(1,errno, "setsockopt failed");
 }
 
-Server::Server(uint port,std::string serial): devicecontroller(DeviceController(serial))
+Server::Server(uint32_t port,std::string serial): controller(phm::controller(serial))
 {
+    for(int i=0;i<4;i++)
+    {
+        socks[i]=controller.get_outlet(i).get_state();
+    }
     _epollFd = epoll_create1(0);
     _sock = socket(AF_INET, SOCK_STREAM, 0);
     if(_sock == -1) 
         error(1, errno, "socket failed");
 
     sockaddr_in serverAddr{.sin_family=AF_INET, .sin_port=htons((short)port), .sin_addr={INADDR_ANY},.sin_zero={0}};
+    setReuseAddr(_sock);
     int res = bind(_sock, (sockaddr*) &serverAddr, sizeof(serverAddr));
     if(res) 
         error(1, errno, "bind failed");
@@ -53,7 +58,8 @@ void Server::handleEvent(uint32_t events)
         if(clientFd == -1) error(1, errno, "accept failed");
         
         std::cout << "new connection from: " << inet_ntoa(clientAddr.sin_addr) << ":" << ntohs(clientAddr.sin_port) << " (fd: "<< clientFd <<")" << std::endl;
-        close(clientFd);
+        clients.push_back(new Client(clientFd,_epollFd,controller));
+        //close(clientFd);
     }
     if(events & ~EPOLLIN){
         error(0, errno, "Event %x on server socket", events);
@@ -63,6 +69,10 @@ void Server::handleEvent(uint32_t events)
     }
 }
 
+void Server::inter()
+{
+    raise(SIGINT);
+}
 
 void Server::serverLoop()
 {
@@ -76,6 +86,15 @@ void Server::serverLoop()
             ctrl_c(SIGINT);
             exit(1);
         }
-        handleEvent(ee.events);
+
+        //std::cout<< ee.data.ptr <<" "<<this << std::endl;
+        if(ee.data.ptr==this)
+        {
+            handleEvent(ee.events);
+        }
+        else
+        {
+            ((Client*)(ee.data.ptr))->handleEvent(ee.events,clients,socks);
+        }
     }
 }
