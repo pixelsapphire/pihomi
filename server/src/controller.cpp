@@ -93,6 +93,8 @@ void phm::irrigation::set_watering_volume(uint32_t watering_volume) noexcept { t
 
 void phm::irrigation::pour_water() { phm::uwu(volume); }
 
+phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin) {}
+
 bool phm::outlet::get_state() const noexcept { return on; }
 
 void phm::outlet::set_state(bool state) noexcept { this->on = state; }
@@ -123,7 +125,10 @@ void phm::periodic_task::stop() {
 }
 
 phm::controller::controller(const std::string& clock_device) : clock(clock_device) {
-    for (uint8_t i = 0; i < 4; i++) outlets.emplace_back();
+    for (uint8_t i = 0; i < 4; i++) {
+        outlets.emplace_back(phm::controller::outlet_pins[i]);
+        outlets[i].set_state(phm::logic_state::high);
+    }
     clock_task.start();
     irrigation_task.start();
 }

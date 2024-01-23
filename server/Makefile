@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -std=c++23 -Wall -Wextra -Werror -pedantic -O0 -g -DRASPBERRY
 SRC = src
-LIBS = -lwiringPi
+LIBS = -lwiringPi -lpigpiod_if2
 BUILD = build
 OBJ = build/obj
 TARGET = build/main
@@ -23,7 +23,7 @@ $(TARGET): $(OBJ_FILES)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
 
 run: all
-	./$(TARGET) /dev/ttyACM1
+	./$(TARGET) /dev/ttyACM0
 
 clean:
 	rm -rf $(BUILD)

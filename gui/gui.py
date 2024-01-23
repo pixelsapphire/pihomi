@@ -3,7 +3,7 @@ from tkinter import *
 from mttkinter import mtTkinter
 import tkinter.font as tkFont
 from time import strftime
-# import time
+import time
 from socket import *
 import threading
 import sys
@@ -13,7 +13,7 @@ ASSETS_PATH = OUTPUT_PATH / Path(r"assets")
 
 # NETWORK CONNECTION
 PORT = 3141
-HOST = "192.168.1.73"
+HOST = "localhost"
 BUFF_SIZE = 64
 ADDRESS = (HOST, PORT)
 
@@ -41,7 +41,8 @@ water_parameters = [0, 0]  # [frequency of watering, water volume]
 water_frequency_titles = [['4 times a day', 0.25], ['2 times a day', 0.5], ['1 time a day', 1], ['every 2 days', 2],
                           ['every 4 days', 4], ['every week', 7], ['every 2 weeks', 14]]
 water_volumes = [20, 50, 100, 150, 200, 250, 500]
-parameter_change = ''  # string który w formacie 'x1' przechowuje zmianę wartości parametru (np. gdy włączamy gniazdko 4 to parameter_change = 's4'
+parameter_change = 'x'  # string który w formacie 'x1' przechowuje zmianę wartości parametru (np. gdy włączamy gniazdko 4 to parameter_change = 's4'
+initial_request = 0
 
 
 def relative_to_assets(path: str) -> Path:
@@ -64,7 +65,6 @@ def make_gui():
             outline="")
 
         canvas.create_image(60, 40, image=image)
-
         canvas.create_text(
             100, 25,
             anchor="nw",
@@ -282,6 +282,52 @@ def make_gui():
                   y=y_reference[0] + outlets_height + 3 * padding + 20)
         time()
 
+    def server_connection():
+        global active_devices, active_outlets, water_level, water_parameters, parameter_change
+
+        try:
+            server: socket = socket(AF_INET, SOCK_STREAM)
+            server.connect(ADDRESS)
+
+        except Exception as e:
+            print(f"Error: {e}")
+            thread_socket.join()
+            exit(1)
+
+        while not stop_event.is_set():
+            try:
+                # update changes made by user to server
+                if len(parameter_change) != 0:
+                    data_to_send = parameter_change + '\n'
+                    server.send(data_to_send.encode('utf-8'))
+                    print(parameter_change)
+                    parameter_change = ''
+
+                    received_data = server.recv(BUFF_SIZE)
+                    parts = received_data.decode('utf-8').split(';')
+                    for i_device in range(len(active_devices)):
+                        active_devices[i_device] = int(parts[i_device])
+                    for i_outlet in range(len(active_devices), len(active_outlets) + len(active_devices)):
+                        active_outlets[i_outlet - len(active_devices)] = int(parts[i_outlet])
+                    water_level = int(parts[len(active_outlets) + len(active_devices)])
+                    water_parameters[0] = float(parts[-2])
+                    water_parameters[1] = int(parts[-1])
+
+                    print(active_devices, active_outlets, water_level, water_parameters)
+                    update_window()
+                    time.sleep(1)
+
+            except Exception as e:
+                print(f"Error: {e}")
+                thread_socket.join()
+                exit(1)
+
+    stop_event = threading.Event()
+
+    thread_socket = threading.Thread(target=server_connection)
+    thread_socket.start()
+
+
     def update_window():
         global active_devices, active_outlets, water_level, draw_image_icon, draw_image_checkbox, draw_image_outlet
 
@@ -302,6 +348,7 @@ def make_gui():
     window.protocol("WM_DELETE_WINDOW", on_closing)  # closing the window stops a thread for GUI
     window.title('PiHoMi')
     window.geometry("950x625")
+    window.resizable(False, False)
     window.configure(bg=dark)
     window_size = [950, 625]
 
@@ -318,54 +365,13 @@ def make_gui():
     image_home = PhotoImage(file=relative_to_assets("home.png"))
     draw_logo(image_home)
 
-    window.resizable(False, False)
     update_window()
+
     window.mainloop()
 
 
-def server_connection():
-    global active_devices, active_outlets, water_level, water_parameters, parameter_change
-
-    try:
-        server: socket = socket(AF_INET, SOCK_STREAM)
-        server.connect(ADDRESS)
-    except Exception as e:
-        print(f"Error: {e}")
-        thread_socket.join()
-        exit(1)
-
-    while not stop_event.is_set():
-        try:
-            # update changes made by user to server
-            if len(parameter_change) != 0:
-                data_to_send = parameter_change + '\n'
-                server.send(data_to_send.encode('utf-8'))
-                print(parameter_change)
-                parameter_change = ''
-
-                received_data = server.recv(BUFF_SIZE)
-                parts = received_data.decode('utf-8').split(';')
-                for i_device in range(len(active_devices)):
-                    active_devices[i_device] = int(parts[i_device])
-                for i_outlet in range(len(active_devices), len(active_outlets) + len(active_devices)):
-                    active_outlets[i_outlet - len(active_devices)] = int(parts[i_outlet])
-                water_level = int(parts[len(active_outlets) + len(active_devices)])
-                water_parameters[0] = int(parts[-2])
-                water_parameters[1] = int(parts[-1])
-
-                print(active_devices, active_outlets, water_level, water_parameters)
-
-
-
-        except Exception as e:
-            print(f"Error: {e}")
-            thread_socket.join()
-            exit(1)
-
-
-stop_event = threading.Event()
-
-thread_socket = threading.Thread(target=server_connection)
-thread_socket.start()
 
 make_gui()
+
+#thread_gui = threading.Thread(target=make_gui)
+#thread_gui.start()

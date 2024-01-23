@@ -6,6 +6,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include "gpio.hpp"
 
 namespace phm {
 
@@ -85,8 +86,11 @@ namespace phm {
     class outlet {
 
         bool on = true;
+        phm::gpio::pin relay;
 
     public:
+
+        explicit outlet(uint8_t relay_pin);
 
         [[nodiscard]] bool get_state() const noexcept;
 
@@ -114,6 +118,8 @@ namespace phm {
     };
 
     class controller {
+
+        static inline const std::vector<uint8_t> outlet_pins = {17, 27, 22, 23};
 
         phm::clock clock;
         phm::irrigation irrigation;

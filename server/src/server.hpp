@@ -1,44 +1,55 @@
-#pragma once
-#include <iostream>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+#ifndef PIHOMI_SERVER_HPP
+#define PIHOMI_SERVER_HPP
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <error.h>
+#include <iostream>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <sys/epoll.h>
+#include <sys/socket.h>
 #include <sys/time.h>
-#include <unordered_set>
-#include <list>
 #include <signal.h>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "client.hpp"
 #include "controller.hpp"
 
-extern bool serverRunning;
+extern bool server_running;
 extern void ctrl_c(int);
 
-void setReuseAddr(int sock);
+namespace phm {
 
-struct Server 
-{
+    class server {
+
     int _sock;
     int _epollFd;
-    std::array<bool,4> socks;
+    std::array<bool, 4> socks;
     phm::controller controller;
-    std::thread serverThread;
+    std::thread server_thread;
     std::vector<Client*> clients;
+
+    static void set_reuse_addr(int sock);
+
     public:
-        Server(uint32_t port,std::string serial);
-        ~Server();
-        int sock() const;
-        void handleEvent(uint32_t events);
-        void serverLoop();
+
+        server(uint32_t port,std::string serial);
+
+        ~server();
+
+        [[nodiscard]] int sock() const;
+
+        [[nodiscard]] std::thread& thread();
+
+        void handle_event(uint32_t events);
+
+        void server_loop();
+
         void inter();
-        
-};
+    };
+}
 
-
+#endif // PIHOMI_SERVER_HPP
