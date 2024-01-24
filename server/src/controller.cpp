@@ -8,10 +8,12 @@ bool phm::serial_port::is_open() const noexcept { return active; }
 
 phm::serial_port::~serial_port() { if (active) serialClose(fd); }
 
-phm::serial_port::serial_port(const std::string& device, int baudrate) {
-    fd = serialOpen(device.c_str(), baudrate);
+phm::serial_port::serial_port(std::string device, int baudrate) : device_path(std::move(device)) {
+    fd = serialOpen(device_path.c_str(), baudrate);
     if (fd >= 0) active = true;
 }
+
+const std::string& phm::serial_port::device() const noexcept { return device_path; }
 
 void phm::serial_port::write(const std::string& data) const {
     serialPuts(fd, data.c_str());
@@ -75,6 +77,10 @@ void phm::clock::update_time() {
     process_response();
 }
 
+std::string phm::clock::status_str() const noexcept {
+    return std::string(get_state() ? "enabled" : "disabled") + " (" + arduino.device() + ", " + (is_good() ? "ok" : "error") + ")";
+}
+
 bool phm::irrigation::get_state() const noexcept { return on; }
 
 void phm::irrigation::set_state(bool state) noexcept { this->on = state; }
@@ -92,6 +98,10 @@ uint32_t phm::irrigation::get_watering_volume() const noexcept { return volume; 
 void phm::irrigation::set_watering_volume(uint32_t watering_volume) noexcept { this->volume = watering_volume; }
 
 void phm::irrigation::pour_water() { phm::uwu(volume); }
+
+std::string phm::irrigation::status_str() const noexcept {
+    return std::string(get_state() ? "enabled" : "disabled") + " (water: " + std::to_string(get_water_level()) + "%, delay: " + std::to_string(get_watering_delay()) + " days, volume: " + std::to_string(get_watering_volume()) + "ml)";
+}
 
 phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin) {}
 
@@ -153,3 +163,9 @@ const phm::irrigation& phm::controller::get_irrigation() const noexcept { return
 phm::outlet& phm::controller::get_outlet(uint8_t id) { return outlets[id]; }
 
 const phm::outlet& phm::controller::get_outlet(uint8_t id) const { return outlets[id]; }
+
+std::string phm::controller::outlets_status_str() const noexcept {
+    std::string outlets_status;
+    for (uint8_t i = 0; i < 4; i++) outlets_status += std::to_string(i + 1) + ":" + (outlets[i].get_state() ? "on" : "off") + ", ";
+    return std::string(outlets_enabled ? "enabled" : "disabled") + " (" + outlets_status.substr(0, outlets_status.size() - 2) + ")";
+}

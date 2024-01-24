@@ -3,7 +3,6 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
-#include <error.h>
 #include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -25,14 +24,14 @@ namespace phm {
 
     class server {
 
-    int _sock;
-    int _epollFd;
-    std::array<bool, 4> socks;
-    phm::controller controller;
-    std::thread server_thread;
-    std::vector<Client*> clients;
+        int _sock;
+        int _epoll_fd;
+        std::array<bool, 4> socks;
+        phm::controller controller;
+        std::thread server_thread;
+        std::vector<Client*> clients;
 
-    static void set_reuse_addr(int sock);
+        static void set_reuse_addr(int sock);
 
     public:
 
@@ -49,6 +48,8 @@ namespace phm {
         void server_loop();
 
         void inter();
+
+        void print_status(const std::vector<std::string>& args) const;
     };
 }
 

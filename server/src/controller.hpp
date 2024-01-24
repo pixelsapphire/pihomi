@@ -21,12 +21,15 @@ namespace phm {
 
         int fd;
         bool active = false;
+        const std::string device_path;
 
     public:
 
-        serial_port(const std::string& device, int baudrate);
+        serial_port(std::string device, int baudrate);
 
         ~serial_port();
+
+        [[nodiscard]] const std::string& device() const noexcept;
 
         [[nodiscard]] bool is_open() const noexcept;
 
@@ -53,6 +56,8 @@ namespace phm {
         void set_state(bool state);
 
         void update_time();
+
+        [[nodiscard]] std::string status_str() const noexcept;
     };
 
     class irrigation {
@@ -81,6 +86,8 @@ namespace phm {
         void set_watering_volume(uint32_t watering_volume) noexcept;
 
         void pour_water();
+
+        [[nodiscard]] std::string status_str() const noexcept;
     };
 
     class outlet {
@@ -152,6 +159,8 @@ namespace phm {
         [[nodiscard]] phm::outlet& get_outlet(uint8_t id);
 
         [[nodiscard]] const phm::outlet& get_outlet(uint8_t id) const;
+
+        [[nodiscard]] std::string outlets_status_str() const noexcept;
     };
 }
 
