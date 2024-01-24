@@ -22,7 +22,7 @@ phm::client::~client() {
 
 void phm::client::write(const std::string& msg) {
     ::write(_fd, msg.c_str(), msg.size());
-    phm::info.println("Wrote to " + std::to_string(_fd) + ": " + msg + " (" + std::to_string(msg.size()) + " bytes)");
+    phm::debug.println("Wrote to " + std::to_string(_fd) + ": " + msg + " (" + std::to_string(msg.size()) + " bytes)");
 }
 
 void phm::client::send_current_state() {
@@ -49,7 +49,7 @@ std::string phm::client::read() {
     char buf[32]{0};
     ::read(_fd, buf, 32);
     std::string buffer = buf;
-    phm::info.println("Read from " + std::to_string(_fd) + ": " + buffer + " (" + std::to_string(buffer.size()) + " bytes)");
+    phm::debug.println("Read from " + std::to_string(_fd) + ": " + buffer + " (" + std::to_string(buffer.size()) + " bytes)");
     return buffer;
 }
 
