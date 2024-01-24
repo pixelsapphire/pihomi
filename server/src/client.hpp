@@ -1,38 +1,36 @@
-#pragma once
-#include <iostream>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <error.h>
-#include <netdb.h>
-#include <sys/epoll.h>
-#include <sys/time.h>
-#include <unordered_set>
-#include <list>
-#include <signal.h>
-#include <thread>
+#ifndef PIHOMI_CLIENT_HPP
+#define PIHOMI_CLIENT_HPP
+
 #include <vector>
-#include <sstream>
-
 #include "controller.hpp"
-//#include <algorithm>
 
+namespace phm {
 
-struct Client
-{
-    int _fd;
-    int _epollFd;
-    int connected;
-    phm::controller &_controller;
-    Client(int fd,int epollfd,phm::controller &controller);
-    ~Client();
-    void write(std::string msg);
-    std::string read();
-    void remove(std::vector<Client*> &clients);
-    void handleEvent(uint32_t events,std::vector<Client*> &clients,std::array<bool,4> &outlets);
-    void handleMessage(std::string&msg,std::array<bool,4> &outlets);
-    void sendCurrentState();
-};
+    class client {
+    
+        int _fd;
+        int _epoll_fd;
+        int connected;
+        phm::controller& _controller;
 
+    public:
+
+        client(int fd, int epollfd, phm::controller& controller);
+
+        ~client();
+
+        void write(const std::string& msg);
+
+        [[nodiscard]] std::string read();
+
+        void remove_from(std::vector<client*>& clients);
+
+        void handle_event(uint32_t events, std::vector<client*>& clients, std::array<bool, 4>& outlets);
+
+        void handle_message(const std::string& msg, std::array<bool,4>& outlets);
+
+        void send_current_state();
+    };
+}
+
+#endif // PIHOMI_CLIENT_HPP

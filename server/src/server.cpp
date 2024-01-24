@@ -66,7 +66,7 @@ void phm::server::server_loop() {
             exit(1);
         }
         if (ee.data.ptr == this) handle_event(ee.events);
-        else ((Client*) ee.data.ptr)->handleEvent(ee.events, clients, socks);
+        else ((client*) ee.data.ptr)->handle_event(ee.events, clients, socks);
     }
 }
 

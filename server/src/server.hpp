@@ -29,7 +29,7 @@ namespace phm {
         std::array<bool, 4> socks;
         phm::controller controller;
         std::thread server_thread;
-        std::vector<Client*> clients;
+        std::vector<client*> clients;
 
         static void set_reuse_addr(int sock);
 
