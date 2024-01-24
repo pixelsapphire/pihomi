@@ -103,11 +103,14 @@ std::string phm::irrigation::status_str() const noexcept {
     return std::string(get_state() ? "enabled" : "disabled") + " (water: " + std::to_string(get_water_level()) + "%, delay: " + std::to_string(get_watering_delay()) + " days, volume: " + std::to_string(get_watering_volume()) + "ml)";
 }
 
-phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin) {}
+phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin) { relay.set(phm::logic_state::high); }
 
 bool phm::outlet::get_state() const noexcept { return on; }
 
-void phm::outlet::set_state(bool state) noexcept { this->on = state; }
+void phm::outlet::set_state(bool state) noexcept {
+    on = state;
+    relay.set(state ? phm::logic_state::low : phm::logic_state::high);
+}
 
 phm::periodic_task::periodic_task(std::chrono::seconds interval, std::function<void()> task)
     : interval_supplier([=] { return interval; }), task(std::move(task)) {}
@@ -135,10 +138,7 @@ void phm::periodic_task::stop() {
 }
 
 phm::controller::controller(const std::string& clock_device) : clock(clock_device) {
-    for (uint8_t i = 0; i < 4; i++) {
-        outlets.emplace_back(phm::controller::outlet_pins[i]);
-        outlets[i].set_state(phm::logic_state::high);
-    }
+    for (uint8_t i = 0; i < 4; i++) outlets.emplace_back(phm::controller::outlet_pins[i]);
     clock_task.start();
     irrigation_task.start();
 }

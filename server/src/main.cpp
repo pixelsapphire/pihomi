@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
 
     phm::register_command("exit", [](const auto&) { ctrl_c(0); });
     phm::register_command("status", [&](const auto& args) { server.print_status(args); });
+    phm::register_command("set", [&](const auto& args) { server.set_state(args); });
 
     while (server_running) phm::execute_command(phm::input.readln());
 

@@ -92,7 +92,7 @@ namespace phm {
 
     class outlet {
 
-        bool on = true;
+        bool on = false;
         phm::gpio::pin relay;
 
     public:

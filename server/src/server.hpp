@@ -50,6 +50,8 @@ namespace phm {
         void inter();
 
         void print_status(const std::vector<std::string>& args) const;
+
+        void set_state(const std::vector<std::string>& args);
     };
 }
 

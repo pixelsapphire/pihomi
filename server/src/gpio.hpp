@@ -32,7 +32,7 @@ namespace phm {
 
             void set(phm::logic_state state);
         };
-}
+    }
 }
 
 #endif // PIHOMI_GPIO_HPP

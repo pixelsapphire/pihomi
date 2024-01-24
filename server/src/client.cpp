@@ -68,7 +68,7 @@ void phm::client::handle_message(const std::string& msg, std::array<bool, 4>& ou
         if (_controller.outlets_state())
             for (uint8_t i = 0; i < 4; ++i) {
                 outlets[i] = _controller.get_outlet(i).get_state();
-                _controller.get_outlet(i).set_state(false);
+                _controller.get_outlet(i).set_state(phm::logic_state::low);
             }
         else for (uint8_t i = 0; i < 4; ++i) _controller.get_outlet(i).set_state(outlets[i]);
         _controller.set_outlets_state(!_controller.outlets_state());

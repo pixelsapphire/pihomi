@@ -23,7 +23,7 @@ $(TARGET): $(OBJ_FILES)
 	$(CXX) $(CXXFLAGS) $^ -o $@ $(LIBS)
 
 run: all
-	./$(TARGET) /dev/ttyACM0
+	sudo ./$(TARGET) /dev/ttyACM0
 
 clean:
 	rm -rf $(BUILD)

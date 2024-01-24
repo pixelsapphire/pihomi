@@ -7,7 +7,7 @@ void phm::server::set_reuse_addr(int sock) {
     if (res) phm::error(1, errno, "setsockopt failed");
 }
 
-phm::server::server(uint32_t port,std::string serial): controller(serial) {
+phm::server::server(uint32_t port,std::string serial) : controller(serial) {
 
     for (uint8_t i = 0; i < 4; ++i) socks[i] = controller.get_outlet(i).get_state();
     _epoll_fd = epoll_create1(0);
@@ -85,4 +85,18 @@ void phm::server::print_status(const std::vector<std::string>& args) const {
     else if (args[0] == "irrigation") phm::info.println(controller.get_irrigation().status_str());
     else if (args[0] == "outlets") phm::info.println(controller.outlets_status_str());
     else phm::error.println("Invalid argument: " + args[0]);
+}
+
+void phm::server::set_state(const std::vector<std::string>& args) {
+    if (args.size() < 2 or args[0] == "-h" or args[0] == "--help" or (args[1] != "on" and args[1] != "off")) {
+        (args.empty() ? phm::error : phm::info).println("Usage: set <all|clock|irrigation|outlets|outlet.<1-4>> <on|off>");
+        return;
+    }
+    const auto state = args[1] == "on" ? phm::logic_state::high : phm::logic_state::low;
+    if (args[0] == "clock" or args[0] == "all") controller.get_clock().set_state(state);
+    if (args[0] == "irrigation" or args[0] == "all") controller.get_irrigation().set_state(state);
+    if (args[0] == "outlets" or args[0] == "all") controller.set_outlets_state(state);
+    for (uint8_t i = 0; i < 4; ++i)
+        if (args[0] == "outlet." + std::to_string(i + 1) or args[0] == "all") controller.get_outlet(i).set_state(state);
+    print_status({args[0].starts_with("outlet.") ? "outlets" : args[0]});
 }
