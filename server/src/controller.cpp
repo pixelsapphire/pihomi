@@ -103,7 +103,7 @@ std::string phm::irrigation::status_str() const noexcept {
     return std::string(get_state() ? "enabled" : "disabled") + " (water: " + std::to_string(get_water_level()) + "%, delay: " + std::to_string(get_watering_delay()) + " days, volume: " + std::to_string(get_watering_volume()) + "ml)";
 }
 
-phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin) { relay.set(phm::logic_state::high); }
+phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin, phm::pin_mode::output) { relay.set(phm::logic_state::high); }
 
 bool phm::outlet::get_state() const noexcept { return on; }
 

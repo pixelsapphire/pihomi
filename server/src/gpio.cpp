@@ -6,7 +6,7 @@ namespace phm::gpio {
     int descriptor = -1;
 }
 
-phm::gpio::pin::pin(uint8_t number) : number(number) {}
+phm::gpio::pin::pin(uint8_t number, phm::pin_mode mode) : number(number), mode(mode) {}
 
 #ifdef RASPBERRY
 
@@ -15,14 +15,20 @@ phm::gpio::pin::pin(uint8_t number) : number(number) {}
 void phm::gpio::begin() {
     std::system("sudo pigpiod; sleep 1;");
     if ((phm::gpio::descriptor = pigpio_start(nullptr, nullptr)) < 0)
-        throw std::runtime_error("Failed to connect to PiGPIO daemon: " +
-                                  std::string(pigpio_error(phm::gpio::descriptor)));
+        throw std::runtime_error("Failed to connect to PiGPIO daemon: " + std::string(pigpio_error(phm::gpio::descriptor)));
 }
 
 void phm::gpio::pin::set(phm::logic_state state) {
+    if (mode == phm::pin_mode::input) throw std::runtime_error("Cannot set state of input pin");
     if (gpio_write(phm::gpio::descriptor, number, state) < 0)
-        throw std::runtime_error("Failed to change pin state: " +
-                                 std::string(pigpio_error(phm::gpio::descriptor)));
+        throw std::runtime_error("Failed to change pin state: " + std::string(pigpio_error(phm::gpio::descriptor)));
+}
+
+phm::logic_state phm::gpio::pin::get() const {
+    if (mode == phm::pin_mode::output) throw std::runtime_error("Cannot get state of output pin");
+    int state = gpio_read(phm::gpio::descriptor, number);
+    if (state < 0) throw std::runtime_error("Failed to read pin state: " + std::string(pigpio_error(phm::gpio::descriptor)));
+    return phm::logic_state(state);
 }
 
 #else
@@ -30,5 +36,7 @@ void phm::gpio::pin::set(phm::logic_state state) {
 void phm::gpio::begin() { phm::gpio::descriptor = 0; }
 
 void phm::gpio::pin::set(phm::logic_state state) {}
+
+phm::logic_state phm::gpio::pin::get() const {}
 
 #endif
