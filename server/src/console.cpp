@@ -8,7 +8,7 @@
 
 std::map<std::string, std::function<void(const std::vector<std::string>&)>> commands;
 
-phm::input_console phm::input{"pihomi> "};
+phm::input_console phm::in{"pihomi> "};
 phm::console_output phm::debug{"DEBUG"}, phm::info{"INFO"}, phm::warn{"WARN", true}, phm::error{"ERROR", true};
 
 std::vector<std::string> phm_split(const std::string& command) {

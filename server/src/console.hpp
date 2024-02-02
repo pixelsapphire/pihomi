@@ -32,11 +32,10 @@ namespace phm {
 
         void flush() const;
 
-        // for compatibility with error.h
-        void operator()(int status, int errnum, const char *format, ...) const __attribute__((format(printf, 4, 5)));
+        void operator()(int status, int errnum, const char* format, ...) const __attribute__((format(printf, 4, 5)));
     };
 
-    extern phm::input_console input;
+    extern phm::input_console in;
     extern phm::console_output debug, info, warn, error;
 
     void register_command(const std::string& name, std::function<void(const std::vector<std::string>&)> callback);

@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
     phm::register_command("status", [&](const auto& args) { server.print_status(args); });
     phm::register_command("set", [&](const auto& args) { server.set_state(args); });
 
-    while (server_running) phm::execute_command(phm::input.readln());
+    while (server_running) phm::execute_command(phm::in.readln());
 
     pthread_cancel(server.thread().native_handle());
 
