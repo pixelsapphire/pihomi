@@ -20,6 +20,7 @@ int main(int argc, char** argv) {
     }
     server_running = true;
     signal(SIGINT, ctrl_c);
+    signal(SIGPIPE, SIG_IGN);
 
     phm::gpio::begin();
     phm::server server(3141, argv[1]);
