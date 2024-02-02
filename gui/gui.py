@@ -13,7 +13,7 @@ ASSETS_PATH = OUTPUT_PATH / Path(r"assets")
 
 # NETWORK CONNECTION
 PORT = 3141
-HOST = "localhost"
+HOST = "192.168.1.74"
 BUFF_SIZE = 64
 ADDRESS = (HOST, PORT)
 
@@ -28,8 +28,6 @@ semi_semi_light = '#595959'
 blue = '#397791'
 
 # INTERFACE CONSTANTS
-x_devices = [50, 350]
-y_devices = [150, 650]
 padding = 25
 devices_titles = ["CLOCK", "IRRIGATION", "OUTLETS"]
 
@@ -41,178 +39,173 @@ water_parameters = [0, 0]  # [frequency of watering, water volume]
 water_frequency_titles = [['4 times a day', 0.25], ['2 times a day', 0.5], ['1 time a day', 1], ['every 2 days', 2],
                           ['every 4 days', 4], ['every week', 7], ['every 2 weeks', 14]]
 water_volumes = [20, 50, 100, 150, 200, 250, 500]
-parameter_change = 'x'  # string który w formacie 'x1' przechowuje zmianę wartości parametru (np. gdy włączamy gniazdko 4 to parameter_change = 's4'
-initial_request = 0
-
+parameter_change = 'x'  # string (w formacie 'x1') przechowuje zmianę wartości parametru (np. gdy włączamy gniazdko 4 to parameter_change = 's4'
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
 
 
 def make_gui():
+
+    main_canvas = None
+
     def on_closing():
         stop_event.set()
         window.destroy()
         sys.exit()
 
-    # LOGO
-    def draw_logo(image):
-        canvas.place(x=0, y=0)
-        canvas.create_rectangle(
-            0, 0,
-            950, 80,
-            fill=purple,
-            outline="")
-
-        canvas.create_image(60, 40, image=image)
-        canvas.create_text(
-            100, 25,
-            anchor="nw",
-            text="PiHoMi",
-            fill="#000000",
-            font=("Inter Bold", 30 * -1)
-        )
-
-    # DEVICES
-    def draw_devices(x_reference, y_reference, padding, devices_titles, active_devices, draw_image_icon, draw_image_checkbox):
-        canvas.create_rectangle(
-            x_reference[0], y_reference[0],
-            x_reference[1], y_reference[1],
-            fill=semi_dark,
+    def draw_rectangle(canvas, x1, y1, x2, y2, color, fillcolor):
+        return canvas.create_rectangle(
+            x1, y1,
+            x2, y2,
+            fill=color,
+            activefill=fillcolor,
             outline=""
         )
-        canvas.create_text(
-            x_reference[0] + padding + 10, y_reference[0] + padding + 10,
+
+    def draw_text(canvas, x, y, text, color, size):
+        return canvas.create_text(
+            x, y,
             anchor="nw",
-            text="Devices",
-            fill=light,
-            font=tkFont.Font(family='Inter', size=30, weight='bold')
+            text=text,
+            fill=color,
+            font=tkFont.Font(family='Inter', size=size, weight='bold')
         )
 
-        height_device = 60
-        gap_after_text = 110
+    def draw_image_array(canvas, arr, file, x, y):
+        arr.append(PhotoImage(
+            file=relative_to_assets(file)))
+        return canvas.create_image(
+            x, y,
+            image=arr[-1]
+        )
 
+    # LOGO
+    def draw_logo(image):
+        logo_canvas = Canvas(main_canvas, bg=purple, height=80, width=950, bd=0, highlightthickness=0, relief="ridge")
+        logo_canvas.create_image(60, 40, image=image)
+        draw_text(logo_canvas, 100, 25, text="PiHoMi", color="#000000", size=30)
+        logo_canvas.place(x=0, y=0)
+
+    # DEVICES
+    def draw_devices(parray_image_icon, parray_image_checkbox):
+        sizes = [300, 400]
+        coords = [50, 150]
+        height_device_place = 60
+        gap_after_text = 110
         icon_image_files = ["clock-light25x25.png", "water-light30x30.png", "socket-light-light-bcg30x30.png"]
         icon_image_disabled_files = ["clock-dark25x25.png", "water-dark30x30.png", "socket-dark-light-bcg30x30.png"]
+
+        devices_canvas = Canvas(main_canvas, bg=semi_dark, height=sizes[1], width=sizes[0], bd=0, highlightthickness=0, relief="ridge")
+        devices_canvas.place(x=coords[0], y=coords[1])
+
+        draw_text(devices_canvas, padding + 10, padding + 10, text="Devices", color=light, size=30)
 
         for i in range(3):
             def on_button_click(event, index=i):
                 global parameter_change
                 parameter_change = ''
                 parameter_change = "{device}".format(device=devices_titles[index][0].lower())
-                update_window()
 
-            rectangle = canvas.create_rectangle(
-                x_reference[0] + padding, y_reference[0] + gap_after_text + i * height_device + i * padding,
-                x_reference[1] - padding, y_reference[0] + gap_after_text + (i+1) * height_device + i * padding,
-                fill=semi_semi_dark,
-                outline="",
-                activefill=dark
+            container = draw_rectangle(
+                devices_canvas,
+                padding, gap_after_text + i * height_device_place + i * padding,
+                sizes[0] - padding, + gap_after_text + (i+1) * height_device_place + i * padding,
+                semi_semi_dark, dark
             )
 
-            draw_image_icon.append(PhotoImage(
-                file=relative_to_assets(icon_image_files[i] if active_devices[i] == 1 else icon_image_disabled_files[i])))
-            canvas.create_image(
-                x_reference[0] + padding + 30, y_reference[0] + gap_after_text + i * height_device + i * padding + 30,
-                image=draw_image_icon[i]
+            draw_image_array(
+                devices_canvas,
+                parray_image_icon,
+                icon_image_files[i] if active_devices[i] == 1 else icon_image_disabled_files[i],
+                padding + 30, gap_after_text + i * height_device_place + i * padding + 30
+            )
+            text = draw_text(
+                devices_canvas,
+                padding + 62, i * height_device_place + i * padding + gap_after_text + 23,
+                text=devices_titles[i], color=semi_light if active_devices[i] == 1 else semi_semi_light, size=13
             )
 
-            text = canvas.create_text(
-                x_reference[0] + padding + 62, y_reference[0] + i * height_device + i * padding + gap_after_text + 23,
-                anchor="nw",
-                text=devices_titles[i],
-                fill=semi_light if active_devices[i] == 1 else semi_semi_light,
-                font=tkFont.Font(family='Inter', size=13, weight='bold')
+            draw_image_array(
+                devices_canvas,
+                parray_image_checkbox,
+                "checkbox-yes15x15.png" if active_devices[i] == 1 else "checkbox-no15x15.png",
+                padding + 225,
+                gap_after_text + i * height_device_place + i * padding + 30
             )
 
-            draw_image_checkbox.append(PhotoImage(
-                file=relative_to_assets("checkbox-yes15x15.png" if active_devices[i] == 1 else "checkbox-no15x15.png")))
-            canvas.create_image(
-                x_reference[0] + padding + 225, y_reference[0] + gap_after_text + i * height_device + i * padding + 30,
-                image=draw_image_checkbox[i]
-            )
-            canvas.tag_bind(rectangle, '<Button-1>', on_button_click)
-            canvas.tag_bind(text, '<Button-1>', on_button_click)
+            devices_canvas.tag_bind(container, '<Button-1>', on_button_click)
+            devices_canvas.tag_bind(text, '<Button-1>', on_button_click)
 
     # OUTLETS
-    def draw_outlets(x_reference, y_reference, padding, active_outlets, draw_image_outlet):
+    def draw_outlets(pactive_outlets, parray_image_outlet):
         outlets_height = 200
-        canvas.create_rectangle(
-            x_reference[1] + 2 * padding, y_reference[0],
-            window_size[0] - 2 * padding, y_reference[0] + outlets_height,
-            fill=semi_dark,
-            outline=""
-        )
+        sizes = [window_size[0] - (350 + 2 * padding + 50), outlets_height]
+        coords = [350 + 2 * padding, 150]
 
-        canvas.create_text(
-            x_reference[1] + 100, y_reference[0] + padding,
-            anchor="nw",
-            text="Outlets",
-            fill=light,
-            font=tkFont.Font(family='Inter', size=30, weight='bold')
-        )
+        outlets_canvas = Canvas(main_canvas, bg=semi_dark, height=sizes[1], width=sizes[0], bd=0, highlightthickness=0, relief="ridge")
+        outlets_canvas.place(x=coords[0], y=coords[1])
+
+        draw_text(outlets_canvas, padding * 1.5, padding, text="Outlets", color=light, size=30)
 
         for i in range(4):
             def on_button_click(event, index=i):
                 global parameter_change
-                parameter_change = ''
-                parameter_change = "o{outlet_num}".format(outlet_num=index + 1)
-                update_window()
+                if active_devices[2]:
+                    parameter_change = ''
+                    parameter_change = "o{outlet_num}".format(outlet_num=index + 1)
 
-            draw_image_outlet.append(PhotoImage(
-                file=relative_to_assets("socket-light75x75.png" if active_outlets[i] == 1 else "socket-dark75x75.png")))
-            image = canvas.create_image(
-                x_reference[1] + i * (padding-10) + i * 90 + 140, y_reference[0] + 4*padding + 20,
-                image=draw_image_outlet[i]
+            image = draw_image_array(
+                outlets_canvas,
+                parray_image_outlet,
+                "socket-light75x75.png" if pactive_outlets[i] == 1 else "socket-dark75x75.png",
+                i * (padding - 10) + i * 90 + 95, 4 * padding + 20,
             )
-            canvas.tag_bind(image, '<Button-1>', on_button_click)
-
-            text = canvas.create_text(
-                x_reference[1] + i * (padding-10) + i * 90 + 107, y_reference[0] + 4*padding + 55,
-                anchor="nw",
-                text="{i}. enabled".format(i=i+1) if active_outlets[i] == 1 else "{i}. disabled".format(i=i+1),
-                fill=semi_light if active_outlets[i] == 1 else semi_semi_light,
-                font=tkFont.Font(family='Inter', size=10, weight='bold')
+            text = draw_text(
+                outlets_canvas,
+                i * (padding - 10) + i * 90 + 62, 4 * padding + 55,
+                text="{i}. enabled".format(i=i+1) if pactive_outlets[i] == 1 else "{i}. disabled".format(i=i+1),
+                color=semi_light if pactive_outlets[i] == 1 else semi_semi_light,
+                size=10
             )
-            canvas.tag_bind(text, '<Button-1>', on_button_click)
+            outlets_canvas.tag_bind(image, '<Button-1>', on_button_click)
+            outlets_canvas.tag_bind(text, '<Button-1>', on_button_click)
 
         return outlets_height
 
     # IRRIGATION
-    def draw_irrigation(x_reference, y_reference, padding, outlets_height, water_level=1):
+    def draw_irrigation(outlets_height, pwater_level=1):
         irrigation_width = 200
-        bg_rectangle = canvas.create_rectangle(
-            x_reference[1] + 2 * padding, y_reference[0] + outlets_height + padding,
-            x_reference[1] + 2 * padding + irrigation_width, y_reference[1],
-            fill=semi_dark,
-            outline=""
+        sizes = [irrigation_width, outlets_height]
+        coords = [350 + 2 * padding, 150 + outlets_height + padding]
+
+        irrigation_canvas = Canvas(main_canvas, bg=semi_dark, height=sizes[1], width=sizes[0], bd=0, highlightthickness=0, relief="ridge")
+        irrigation_canvas.place(x=coords[0], y=coords[1])
+
+        text1 = draw_text(
+            irrigation_canvas,
+            30, 20,
+            text="Water level", color=semi_light, size=15
         )
-        text1 = canvas.create_text(
-            x_reference[1] + 2 * padding + 30, y_reference[0] + outlets_height + padding + 20,
-            anchor="nw",
-            text="Water level",
-            fill=semi_light,
-            font=tkFont.Font(family='Inter', size=15, weight='bold')
-        )
-        text2 = canvas.create_text(
-            x_reference[1] + 2 * padding + 30, y_reference[0] + outlets_height + padding + 40,
-            anchor="nw",
-            text="irrigation",
-            fill=semi_semi_light,
-            font=tkFont.Font(family='Inter', size=10, weight='bold')
+        text2 = draw_text(
+            irrigation_canvas,
+            30, 40,
+            text="irrigation", color=semi_semi_light, size=10
         )
 
-        container_rectangle = canvas.create_rectangle(
-            x_reference[1] + 2 * padding + 75, y_reference[0] + outlets_height + padding + 75,
-            x_reference[1] + 2 * padding + irrigation_width - 75, y_reference[1] - 125,
-            fill=semi_semi_dark,
-            outline=""
+        # container rectangle
+        draw_rectangle(
+            irrigation_canvas,
+            3 * padding, 3 * padding,
+            3 * padding + 50, 3 * padding + 75,
+            semi_semi_dark, semi_semi_dark
         )
-        water_rectangle = canvas.create_rectangle(
-            x_reference[1] + 2 * padding + 75, y_reference[0] + outlets_height + padding + 75 + (7 - water_level) * 10,
-            x_reference[1] + 2 * padding + irrigation_width - 75, y_reference[1] - 125,
-            fill=blue,
-            outline=""
+        # water level rectangle
+        draw_rectangle(
+            irrigation_canvas,
+            3 * padding, 3 * padding + (7 - pwater_level) * 10,
+            3 * padding + 50, 3 * padding + 75,
+            blue, blue
         )
 
         def change_frequency(freq):
@@ -220,14 +213,12 @@ def make_gui():
             water_parameters[0] = freq
             parameter_change = ''
             parameter_change = "f{frequency_value}".format(frequency_value=freq)
-            update_window()
 
         def change_volume(v):
             global water_parameters, parameter_change
             water_parameters[1] = v
             parameter_change = ''
             parameter_change = "v{volume_value}".format(volume_value=v)
-            update_window()
 
         def popup(e):
             menu.tk_popup(e.x_root, e.y_root)
@@ -244,43 +235,44 @@ def make_gui():
         for volume in water_volumes:
             menu.add_command(label=str(volume)+'ml', command=lambda freq=volume: change_volume(freq))
 
-        canvas.tag_bind(bg_rectangle, "<Button-3>", popup)
-        canvas.tag_bind(text1, "<Button-3>", popup)
-        canvas.tag_bind(text2, "<Button-3>", popup)
-        canvas.tag_bind(container_rectangle, "<Button-3>", popup)
-        canvas.tag_bind(water_rectangle, "<Button-3>", popup)
+        irrigation_canvas.bind("<Button-3>", popup)
 
         return irrigation_width
 
     # CLOCK
-    def draw_clock(x_reference, y_reference, padding, irrigation_width, outlets_height):
-        canvas.create_rectangle(
-            x_reference[1] + 3 * padding + irrigation_width, y_reference[0] + outlets_height + padding,
-            window_size[0] - 2 * padding, y_reference[1],
-            fill=semi_dark,
-            outline=""
-        )
-        canvas.create_text(
-            x_reference[1] + 3 * padding + irrigation_width + padding, y_reference[0] + outlets_height + padding + 20,
-            anchor="nw",
-            text="Clock",
-            fill=light,
-            font=tkFont.Font(family='Inter',
-                             size=30, weight='bold')
+    def draw_clock(irrigation_width, outlets_height):
+        sizes = [window_size[0] - (350 + 2 * padding + 50) - irrigation_width - padding, outlets_height]
+        coords = [350 + 3 * padding + irrigation_width, 150 + outlets_height + padding]
+
+        clock_canvas = Canvas(main_canvas, bg=semi_dark, height=sizes[1], width=sizes[0], bd=0, highlightthickness=0, relief="ridge")
+        clock_canvas.place(x=coords[0], y=coords[1])
+
+        draw_text(
+            clock_canvas,
+            padding, 20,
+            text="Clock", color=light, size=30
         )
 
-        def time():
+        def draw_time():
             string = strftime('%H:%M')
             lbl.config(text=string)
-            lbl.after(1000, time)
+            lbl.after(1000, draw_time)
 
-        lbl = Label(window, font=('calibri', 40, 'bold'),
-                    background=semi_dark,
-                    foreground=semi_light)
+        lbl = Label(clock_canvas, font=('calibri', 40, 'bold'), background=semi_dark, foreground=semi_light)
+        lbl.place(x=3 * padding, y=2 * padding + 20)
+        draw_time()
 
-        lbl.place(x=x_reference[1] + 3 * padding + irrigation_width + 3 * padding,
-                  y=y_reference[0] + outlets_height + 3 * padding + 20)
-        time()
+    def draw_dashboard():
+        global active_outlets, water_level, array_image_icon, array_image_checkbox, array_image_outlet
+
+        array_image_icon = []
+        array_image_checkbox = []
+        array_image_outlet = []
+
+        draw_devices(array_image_icon, array_image_checkbox)
+        outlets_height = draw_outlets(active_outlets, array_image_outlet)
+        irrigation_width = draw_irrigation(outlets_height, water_level)
+        draw_clock(irrigation_width, outlets_height)
 
     def server_connection():
         global active_devices, active_outlets, water_level, water_parameters, parameter_change
@@ -307,14 +299,15 @@ def make_gui():
                     parts = received_data.decode('utf-8').split(';')
                     for i_device in range(len(active_devices)):
                         active_devices[i_device] = int(parts[i_device])
-                    for i_outlet in range(len(active_devices), len(active_outlets) + len(active_devices)):
+                    for i_outlet in range(len(active_devices), len(active_devices) + len(active_outlets)):
                         active_outlets[i_outlet - len(active_devices)] = int(parts[i_outlet])
                     water_level = int(parts[len(active_outlets) + len(active_devices)])
-                    water_parameters[0] = float(parts[-2])
-                    water_parameters[1] = int(parts[-1])
+                    water_parameters[0] = float(parts[-2])  # frequency of watering
+                    water_parameters[1] = int(parts[-1])  # volume of water
 
-                    print(active_devices, active_outlets, water_level, water_parameters)
-                    update_window()
+                    # print(active_devices, active_outlets, water_level, water_parameters)
+                    if main_canvas is not None:
+                        draw_dashboard()
                     time.sleep(1)
 
             except Exception as e:
@@ -327,32 +320,15 @@ def make_gui():
     thread_socket = threading.Thread(target=server_connection)
     thread_socket.start()
 
-
-    def update_window():
-        global active_devices, active_outlets, water_level, draw_image_icon, draw_image_checkbox, draw_image_outlet
-
-        draw_image_icon = []
-        draw_image_checkbox = []
-        draw_image_outlet = []
-
-        draw_devices(x_devices, y_devices, padding, devices_titles, active_devices, draw_image_icon, draw_image_checkbox)
-        outlets_height = draw_outlets(x_devices, y_devices, padding, active_outlets, draw_image_outlet)
-        irrigation_width = draw_irrigation(x_devices, y_devices, padding, outlets_height, water_level)
-        draw_clock(x_devices, y_devices, padding, irrigation_width, outlets_height)
-
-    draw_image_icon = []
-    draw_image_checkbox = []
-    draw_image_outlet = []
-
     window = mtTkinter.Tk()
     window.protocol("WM_DELETE_WINDOW", on_closing)  # closing the window stops a thread for GUI
     window.title('PiHoMi')
-    window.geometry("950x625")
+    window.geometry("950x600")
     window.resizable(False, False)
     window.configure(bg=dark)
-    window_size = [950, 625]
+    window_size = [950, 600]
 
-    canvas = Canvas(
+    main_canvas = Canvas(
         window,
         bg=dark,
         height=550,
@@ -361,17 +337,17 @@ def make_gui():
         highlightthickness=0,
         relief="ridge"
     )
+    main_canvas.pack()
 
     image_home = PhotoImage(file=relative_to_assets("home.png"))
     draw_logo(image_home)
 
-    update_window()
+    draw_dashboard()
 
     window.mainloop()
 
 
-
 make_gui()
 
-#thread_gui = threading.Thread(target=make_gui)
-#thread_gui.start()
+# thread_gui = threading.Thread(target=make_gui)
+# thread_gui.start()
