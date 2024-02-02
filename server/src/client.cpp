@@ -33,6 +33,7 @@ void phm::client::send_current_state() {
     ss << _controller.outlets_state() << ";";
     if (_controller.outlets_state())
         for (uint8_t i = 0; i < 4; ++i) ss << _controller.get_outlet(i).get_state() << ";";
+    else ss << "0;0;0;0;";
     ss << uint16_t(_controller.get_irrigation().get_water_level()) << ";";
     ss << _controller.get_irrigation().get_watering_delay() << ";";
     ss << _controller.get_irrigation().get_watering_volume() << "\n";
@@ -63,14 +64,24 @@ void phm::client::handle_event(uint32_t events, std::vector<client*>& clients, s
 }
 
 void phm::client::handle_message(const std::string& msg, std::array<bool, 4>& outlets) {
-    if (msg == "o\n") {
-        phm::debug.println("Gniazdka coś");
-        if (_controller.outlets_state())
-            for (uint8_t i = 0; i < 4; ++i) {
-                outlets[i] = _controller.get_outlet(i).get_state();
-                _controller.get_outlet(i).set_state(phm::logic_state::low);
+    if(msg == "o\n") {
+        if(_controller.outlets_state()) {
+            for (int i = 0; i < 4; ++i) {
+                outlets[i]=_controller.get_outlet(i).get_state();
+                _controller.get_outlet(i).set_state(false);
             }
-        else for (uint8_t i = 0; i < 4; ++i) _controller.get_outlet(i).set_state(outlets[i]);
+        } else 
+            for (int i = 0; i < 4; ++i)  _controller.get_outlet(i).set_state(outlets[i]);
         _controller.set_outlets_state(!_controller.outlets_state());
     }
+    else if (_controller.outlets_state()) {
+        if(msg == "o1\n") _controller.get_outlet(0).set_state(!_controller.get_outlet(0).get_state());
+        else if(msg == "o2\n") _controller.get_outlet(1).set_state(!_controller.get_outlet(1).get_state());
+        else if(msg == "o3\n") _controller.get_outlet(2).set_state(!_controller.get_outlet(2).get_state());
+        else if(msg == "o4\n") _controller.get_outlet(3).set_state(!_controller.get_outlet(3).get_state());
+    }
+    if (msg == "c\n") _controller.get_clock().set_state(!_controller.get_clock().get_state());
+    else if (msg == "i\n") _controller.get_irrigation().set_state(!_controller.get_irrigation().get_state());
+    else if (msg[0] == 'f') _controller.get_irrigation().set_watering_delay(std::stof(msg.substr(1,msg.find('\n'))));
+    else if (msg[0] == 'v') _controller.get_irrigation().set_watering_volume(std::stof(msg.substr(1,msg.find('\n'))));
 }
