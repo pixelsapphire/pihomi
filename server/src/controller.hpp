@@ -62,17 +62,22 @@ namespace phm {
 
     class irrigation {
 
-        bool on = true;
-        float delay = 0;
-        uint32_t volume = 0;
+        static inline const std::vector<uint8_t> water_level_pins = {16, 20, 21};
+
+        bool on;
+        float delay;
+        uint32_t volume;
+        std::vector<phm::gpio::pin> water_level_sensor;
 
     public:
+
+        irrigation();
 
         [[nodiscard]] bool get_state() const noexcept;
 
         void set_state(bool state) noexcept;
 
-        [[nodiscard]] uint8_t get_water_level() const noexcept;
+        [[nodiscard]] uint8_t get_water_level() const;
 
         [[nodiscard]] float get_watering_delay() const noexcept;
 

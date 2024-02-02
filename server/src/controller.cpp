@@ -81,11 +81,18 @@ std::string phm::clock::status_str() const noexcept {
     return std::string(get_state() ? "enabled" : "disabled") + " (" + arduino.device() + ", " + (is_good() ? "ok" : "error") + ")";
 }
 
+phm::irrigation::irrigation() : on(true), delay(0), volume(0) {
+    for (uint8_t i = 0; i < 3; i++) water_level_sensor.emplace_back(phm::irrigation::water_level_pins[i], phm::pin_mode::input);
+}
+
 bool phm::irrigation::get_state() const noexcept { return on; }
 
 void phm::irrigation::set_state(bool state) noexcept { this->on = state; }
 
-uint8_t phm::irrigation::get_water_level() const noexcept { return level; }
+uint8_t phm::irrigation::get_water_level() const {
+    const phm::logic_state b4 = water_level_sensor[0].get(), b2 = water_level_sensor[1].get(), b1 = water_level_sensor[2].get();
+    return b4 << 2 | b2 << 1 | b1;
+}
 
 float phm::irrigation::get_watering_delay() const noexcept { return delay; }
 
@@ -98,7 +105,12 @@ void phm::irrigation::set_watering_volume(uint32_t watering_volume) noexcept { t
 void phm::irrigation::pour_water() { phm::uwu(volume); }
 
 std::string phm::irrigation::status_str() const noexcept {
-    return std::string(get_state() ? "enabled" : "disabled") + " (water: " + std::to_string(get_water_level()) + "%, delay: " + std::to_string(get_watering_delay()) + " days, volume: " + std::to_string(get_watering_volume()) + "ml)";
+    const uint8_t level = get_water_level();
+    std::string level_percent = std::to_string(level / 7.0 * 100);
+    level_percent = level_percent.substr(0, level_percent.find('.') + 2);
+    return std::string(get_state() ? "enabled" : "disabled") + " (water: " + level_percent +
+           "% [" + std::to_string(level) + "/7], delay: " + std::to_string(get_watering_delay()) +
+           " days, volume: " + std::to_string(get_watering_volume()) + "ml)";
 }
 
 phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin, phm::pin_mode::output) { relay.set(phm::logic_state::high); }
