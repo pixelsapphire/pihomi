@@ -87,8 +87,6 @@ void phm::irrigation::set_state(bool state) noexcept { this->on = state; }
 
 uint8_t phm::irrigation::get_water_level() const noexcept { return level; }
 
-void phm::irrigation::set_water_level(uint8_t water_level) noexcept { this->level = water_level; }
-
 float phm::irrigation::get_watering_delay() const noexcept { return delay; }
 
 void phm::irrigation::set_watering_delay(float watering_delay) noexcept { this->delay = watering_delay; }
@@ -113,7 +111,7 @@ void phm::outlet::set_state(bool state) noexcept {
 }
 
 phm::periodic_task::periodic_task(std::chrono::seconds interval, std::function<void()> task)
-    : interval_supplier([=] { return interval; }), task(std::move(task)) {}
+        : interval_supplier([=] { return interval; }), task(std::move(task)) {}
 
 phm::periodic_task::periodic_task(std::function<std::chrono::seconds()> interval_supplier, std::function<void()> task)
         : interval_supplier(interval_supplier), task(std::move(task)) {}

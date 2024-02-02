@@ -50,7 +50,7 @@ void phm::server::handle_event(uint32_t events) {
     if (events & ~EPOLLIN) {
         phm::error(0, errno, "Event %x on server socket", events);
         close(_sock);
-        server_running=false;
+        server_running = false;
     }
 }
 
@@ -77,9 +77,9 @@ void phm::server::print_status(const std::vector<std::string>& args) const {
     }
     if (args[0] == "all")
         phm::info.println(std::string("\nSmart home services:") +
-                        "\n * clock: " + controller.get_clock().status_str() +
-                        "\n * irrigation: " + controller.get_irrigation().status_str() +
-                        "\n * outlets: " + controller.outlets_status_str()
+                          "\n * clock: " + controller.get_clock().status_str() +
+                          "\n * irrigation: " + controller.get_irrigation().status_str() +
+                          "\n * outlets: " + controller.outlets_status_str()
         );
     else if (args[0] == "clock") phm::info.println(controller.get_clock().status_str());
     else if (args[0] == "irrigation") phm::info.println(controller.get_irrigation().status_str());

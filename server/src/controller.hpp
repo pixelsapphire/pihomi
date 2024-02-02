@@ -63,7 +63,6 @@ namespace phm {
     class irrigation {
 
         bool on = true;
-        uint8_t level = 0;
         float delay = 0;
         uint32_t volume = 0;
 
@@ -74,8 +73,6 @@ namespace phm {
         void set_state(bool state) noexcept;
 
         [[nodiscard]] uint8_t get_water_level() const noexcept;
-
-        void set_water_level(uint8_t water_level) noexcept;
 
         [[nodiscard]] float get_watering_delay() const noexcept;
 

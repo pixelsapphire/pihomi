@@ -26,7 +26,7 @@ void phm::gpio::pin::set(phm::logic_state state) {
 
 phm::logic_state phm::gpio::pin::get() const {
     if (mode == phm::pin_mode::output) throw std::runtime_error("Cannot get state of output pin");
-    int state = gpio_read(phm::gpio::descriptor, number);
+    const int state = gpio_read(phm::gpio::descriptor, number);
     if (state < 0) throw std::runtime_error("Failed to read pin state: " + std::string(pigpio_error(phm::gpio::descriptor)));
     return phm::logic_state(state);
 }
