@@ -17,7 +17,7 @@ namespace phm {
         [[nodiscard]] std::string readln() const;
     };
 
-    class console_output {
+    class output_console {
 
         std::string level_tag;
         bool error_color;
@@ -26,7 +26,7 @@ namespace phm {
 
     public:
 
-        explicit console_output(const std::string& level, bool error = false);
+        explicit output_console(const std::string& level, bool error = false);
 
         void println(const std::string& message = "") const;
 
@@ -36,7 +36,7 @@ namespace phm {
     };
 
     extern phm::input_console in;
-    extern phm::console_output debug, info, warn, error;
+    extern phm::output_console debug, info, warn, error;
 
     void register_command(const std::string& name, std::function<void(const std::vector<std::string>&)> callback);
 

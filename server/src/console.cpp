@@ -9,7 +9,7 @@
 std::map<std::string, std::function<void(const std::vector<std::string>&)>> commands;
 
 phm::input_console phm::in{"pihomi> "};
-phm::console_output phm::debug{"DEBUG"}, phm::info{"INFO"}, phm::warn{"WARN", true}, phm::error{"ERROR", true};
+phm::output_console phm::debug{"DEBUG"}, phm::info{"INFO"}, phm::warn{"WARN", true}, phm::error{"ERROR", true};
 
 std::vector<std::string> phm_split(const std::string& command) {
     std::vector<std::string> args;
@@ -43,22 +43,22 @@ std::string phm::input_console::readln() const {
     return line;
 }
 
-phm::console_output::console_output(const std::string& level, bool error) : level_tag(level), error_color(error) {}
+phm::output_console::output_console(const std::string& level, bool error) : level_tag(level), error_color(error) {}
 
-std::string phm::console_output::timestamp() const {
+std::string phm::output_console::timestamp() const {
     const time_t time = std::time(nullptr);
     char time_str[32]{0};
     std::strftime(time_str, sizeof(time_str), "%a %b %d %Y %H:%M:%S", std::localtime(&time));
     return time_str;
 }
 
-void phm::console_output::println(const std::string& message) const {
+void phm::output_console::println(const std::string& message) const {
     (error_color ? std::cerr : std::cout) << '[' << timestamp() << "] [" << level_tag << "] " << message << std::endl;
 }
 
-void phm::console_output::flush() const { (error_color ? std::cerr : std::cout).flush(); }
+void phm::output_console::flush() const { (error_color ? std::cerr : std::cout).flush(); }
 
-void phm::console_output::operator()(int status, int errnum, const char *format, ...) const {
+void phm::output_console::operator()(int status, int errnum, const char *format, ...) const {
     va_list args;
     va_start(args, format);
     char buffer[1024]{0};
@@ -69,7 +69,7 @@ void phm::console_output::operator()(int status, int errnum, const char *format,
     if (errnum != 0) output += ": " + std::string(strerror(errnum));
     println(output);
     flush();
-    if (status != 0) exit(status);
+    if (status != 0) std::exit(status);
 }
 
 void phm::register_command(const std::string& name, std::function<void(const std::vector<std::string>&)> callback) {
