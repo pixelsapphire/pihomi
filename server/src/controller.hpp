@@ -104,6 +104,8 @@ namespace phm {
         [[nodiscard]] bool get_state() const noexcept;
 
         void set_state(bool state) noexcept;
+
+        void toggle();
     };
 
     class periodic_task {

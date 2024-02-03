@@ -122,6 +122,8 @@ void phm::outlet::set_state(bool state) noexcept {
     relay.set(state ? phm::logic_state::low : phm::logic_state::high);
 }
 
+void phm::outlet::toggle() { on = not on; relay.toggle(); }
+
 phm::periodic_task::periodic_task(std::chrono::seconds interval, std::function<void()> task)
         : interval_supplier([=] { return interval; }), task(std::move(task)) {}
 

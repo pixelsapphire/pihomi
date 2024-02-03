@@ -82,10 +82,10 @@ void phm::client::handle_message(const std::string& msg, std::array<bool, 4>& ou
         _controller.set_outlets_state(!_controller.outlets_state());
     }
     else if (_controller.outlets_state()) {
-        if(msg == "o1\n") _controller.get_outlet(0).set_state(!_controller.get_outlet(0).get_state());
-        else if(msg == "o2\n") _controller.get_outlet(1).set_state(!_controller.get_outlet(1).get_state());
-        else if(msg == "o3\n") _controller.get_outlet(2).set_state(!_controller.get_outlet(2).get_state());
-        else if(msg == "o4\n") _controller.get_outlet(3).set_state(!_controller.get_outlet(3).get_state());
+        if(msg == "o1\n") _controller.get_outlet(0).toggle();
+        else if(msg == "o2\n") _controller.get_outlet(1).toggle();
+        else if(msg == "o3\n") _controller.get_outlet(2).toggle();
+        else if(msg == "o4\n") _controller.get_outlet(3).toggle();
     }
     if (msg == "c\n") _controller.get_clock().set_state(!_controller.get_clock().get_state());
     else if (msg == "i\n") _controller.get_irrigation().set_state(!_controller.get_irrigation().get_state());

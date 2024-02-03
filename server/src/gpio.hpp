@@ -39,6 +39,8 @@ namespace phm {
 
             void set(phm::logic_state state);
 
+            void toggle();
+
             [[nodiscard]] phm::logic_state get() const;
         };
     }
