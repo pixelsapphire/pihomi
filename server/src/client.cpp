@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
@@ -22,7 +23,7 @@ phm::client::~client() {
 
 void phm::client::write(const std::string& msg) {
     ::write(_fd, msg.c_str(), msg.size());
-    phm::debug.println("Wrote to " + std::to_string(_fd) + ": " + msg + " (" + std::to_string(msg.size()) + " bytes)");
+    phm::debug.println("Wrote to " + std::to_string(_fd) + ": " + msg.substr(0, msg.size() - 1) + " (" + std::to_string(msg.size()) + " bytes)");
 }
 
 void phm::client::send_current_state() {
@@ -42,7 +43,8 @@ void phm::client::send_current_state() {
 }
 
 void phm::client::remove_from(std::vector<client*>& clients) {
-    std::erase(clients,this);
+    phm::info.println("Client " + std::to_string(_fd) + " disconnected");
+    std::erase(clients, this);
     delete this;
 }
 
@@ -50,17 +52,22 @@ std::string phm::client::read() {
     char buf[32]{0};
     ::read(_fd, buf, 32);
     std::string buffer = buf;
-    phm::debug.println("Read from " + std::to_string(_fd) + ": " + buffer + " (" + std::to_string(buffer.size()) + " bytes)");
+    if (not buffer.empty())
+        phm::debug.println("Read from " + std::to_string(_fd) + ": " + buffer.substr(0, buffer.size() - 1) +
+                           " (" + std::to_string(buffer.size()) + " bytes)");
     return buffer;
 }
 
 void phm::client::handle_event(uint32_t events, std::vector<client*>& clients, std::array<bool, 4>& outlets) {
     if (events & EPOLLIN) {
         std::string buffer = read();
-        handle_message(buffer, outlets);
-        send_current_state();
+        if (buffer.empty()) remove_from(clients);
+        else {
+            handle_message(buffer, outlets);
+            send_current_state();
+        }
     }
-    if (events & ~EPOLLIN) remove_from(clients);
+    if (events & ~EPOLLIN and std::find(clients.begin(), clients.end(), this) != clients.end()) remove_from(clients);
 }
 
 void phm::client::handle_message(const std::string& msg, std::array<bool, 4>& outlets) {
