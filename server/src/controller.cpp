@@ -108,9 +108,9 @@ std::string phm::irrigation::status_str() const noexcept {
     const uint8_t level = get_water_level();
     std::string level_percent = std::to_string(level / 7.0 * 100);
     level_percent = level_percent.substr(0, level_percent.find('.') + 2);
-    return std::string(get_state() ? "enabled" : "disabled") + " (water: " + level_percent +
-           "% [" + std::to_string(level) + "/7], delay: " + std::to_string(get_watering_delay()) +
-           " days, volume: " + std::to_string(get_watering_volume()) + "ml)";
+    return std::string(get_state() ? "enabled" : "disabled") + " (water level: " + level_percent +
+           "% [" + std::to_string(level) + "/7], watering delay: " + std::to_string(get_watering_delay()) +
+           " days, watering volume: " + std::to_string(get_watering_volume()) + "ml)";
 }
 
 phm::outlet::outlet(uint8_t relay_pin) : relay(relay_pin, phm::pin_mode::output) { relay.set(phm::logic_state::high); }
