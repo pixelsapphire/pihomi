@@ -20,7 +20,7 @@ namespace phm {
     class output_console {
 
         std::string level_tag;
-        bool error_color;
+        bool enabled, error_color;
 
         [[nodiscard]] std::string timestamp() const;
 
@@ -33,6 +33,8 @@ namespace phm {
         void flush() const;
 
         void operator()(int status, int errnum, const char* format, ...) const __attribute__((format(printf, 4, 5)));
+
+        void set_enabled(bool enabled);
     };
 
     extern phm::input_console in;

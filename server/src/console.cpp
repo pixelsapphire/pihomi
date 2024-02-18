@@ -43,7 +43,7 @@ std::string phm::input_console::readln() const {
     return line;
 }
 
-phm::output_console::output_console(const std::string& level, bool error) : level_tag(level), error_color(error) {}
+phm::output_console::output_console(const std::string& level, bool error) : level_tag(level), enabled(true), error_color(error) {}
 
 std::string phm::output_console::timestamp() const {
     const time_t time = std::time(nullptr);
@@ -53,7 +53,7 @@ std::string phm::output_console::timestamp() const {
 }
 
 void phm::output_console::println(const std::string& message) const {
-    (error_color ? std::cerr : std::cout) << '[' << timestamp() << "] [" << level_tag << "] " << message << std::endl;
+    if (enabled) (error_color ? std::cerr : std::cout) << '[' << timestamp() << "] [" << level_tag << "] " << message << std::endl;
 }
 
 void phm::output_console::flush() const { (error_color ? std::cerr : std::cout).flush(); }
@@ -71,6 +71,8 @@ void phm::output_console::operator()(int status, int errnum, const char *format,
     flush();
     if (status != 0) std::exit(status);
 }
+
+void phm::output_console::set_enabled(bool enabled) { this->enabled = enabled; }
 
 void phm::register_command(const std::string& name, std::function<void(const std::vector<std::string>&)> callback) {
     commands[name] = callback;
