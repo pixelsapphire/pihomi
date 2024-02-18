@@ -136,9 +136,14 @@ void phm::periodic_task::start() {
     if (running) return;
     running = true;
     thread = std::thread([&] {
-        while (running and interval_supplier().count() > 0) {
-            task();
-            std::this_thread::sleep_for(interval_supplier());
+        while (running) {
+            if (interval_supplier().count() >= 0) {
+                const auto start = std::chrono::steady_clock::now();
+                task();
+                const auto elapsed = std::chrono::steady_clock::now() - start;
+                const auto target_delay = interval_supplier();
+                if (elapsed < target_delay) std::this_thread::sleep_for(target_delay - elapsed);
+            }
         }
     });
 }
