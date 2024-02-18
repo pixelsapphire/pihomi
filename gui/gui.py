@@ -44,14 +44,14 @@ water_parameters = [0, 0]  # [frequency of watering, water volume]
 water_frequency_titles = [['4 times a day', 0.25], ['2 times a day', 0.5], ['1 time a day', 1], ['every 2 days', 2],
                           ['every 4 days', 4], ['every week', 7], ['every 2 weeks', 14]]
 water_volumes = [20, 50, 100, 150, 200, 250, 500]
-parameter_change = 'x'  # string (w formacie 'x1') przechowuje zmianę wartości parametru (np. gdy włączamy gniazdko 4 to parameter_change = 's4'
+parameter_change = 'x'  # string (w formacie 'x1') przechowuje żądanie zmiany wartości parametru (np. gdy włączamy gniazdko 4 to parameter_change = 's4'
+
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
 
 
 def make_gui():
-
     main_canvas = None
 
     def on_closing():
@@ -109,13 +109,12 @@ def make_gui():
         for i in range(3):
             def on_button_click(event, index=i):
                 global parameter_change
-                parameter_change = ''
                 parameter_change = "{device}".format(device=devices_titles[index][0].lower())
 
             container = draw_rectangle(
                 devices_canvas,
                 padding, gap_after_text + i * height_device_place + i * padding,
-                sizes[0] - padding, + gap_after_text + (i+1) * height_device_place + i * padding,
+                         sizes[0] - padding, + gap_after_text + (i + 1) * height_device_place + i * padding,
                 semi_semi_dark, dark
             )
 
@@ -157,7 +156,6 @@ def make_gui():
             def on_button_click(event, index=i):
                 global parameter_change
                 if active_devices[2]:
-                    parameter_change = ''
                     parameter_change = "o{outlet_num}".format(outlet_num=index + 1)
 
             image = draw_image_array(
@@ -169,7 +167,7 @@ def make_gui():
             text = draw_text(
                 outlets_canvas,
                 i * (padding - 10) + i * 90 + 62, 4 * padding + 55,
-                text="{i}. enabled".format(i=i+1) if pactive_outlets[i] == 1 else "{i}. disabled".format(i=i+1),
+                text="{i}. enabled".format(i=i + 1) if pactive_outlets[i] == 1 else "{i}. disabled".format(i=i + 1),
                 color=semi_light if pactive_outlets[i] == 1 else semi_semi_light,
                 size=10
             )
@@ -216,13 +214,11 @@ def make_gui():
         def change_frequency(freq):
             global water_parameters, parameter_change
             water_parameters[0] = freq
-            parameter_change = ''
             parameter_change = "f{frequency_value}".format(frequency_value=freq)
 
         def change_volume(v):
             global water_parameters, parameter_change
             water_parameters[1] = v
-            parameter_change = ''
             parameter_change = "v{volume_value}".format(volume_value=v)
 
         def popup(e):
@@ -238,7 +234,7 @@ def make_gui():
         menu.add_command(label="Water volume", state="disabled", activebackground=menu.cget("background"))
         menu.add_separator()
         for volume in water_volumes:
-            menu.add_command(label=str(volume)+'ml', command=lambda freq=volume: change_volume(freq))
+            menu.add_command(label=str(volume) + 'ml', command=lambda freq=volume: change_volume(freq))
 
         irrigation_canvas.bind("<Button-3>", popup)
 
@@ -282,42 +278,77 @@ def make_gui():
     def server_connection():
         global active_devices, active_outlets, water_level, water_parameters, parameter_change
 
+        def popup_no_connection():
+            popup = Toplevel(window)
+            root_x = window.winfo_rootx()
+            root_y = window.winfo_rooty()
+            win_x = root_x + 325
+            win_y = root_y + 175
+
+            popup.geometry("300x250"f'+{win_x}+{win_y}')
+            popup.title("No server connection")
+            popup.protocol("WM_DELETE_WINDOW", on_closing)  # closing the window stops a thread for GUI
+            label1 = Label(popup, text="Failed ", font=('calibri bold', 37), fg='red')
+            label2 = Label(popup, text="to connect to server \n :<", font=('calibri', 15), fg='black')
+            label1.place(relx = 0.52, rely = 0.35, anchor = CENTER)
+            label2.place(relx = 0.5, rely = 0.6, anchor = CENTER)
+
+        def update_global_params(data):
+            global active_devices, active_outlets, water_level, water_parameters, parameter_change
+            for i_device in range(len(active_devices)):
+                active_devices[i_device] = int(data[i_device])
+            for i_outlet in range(len(active_devices), len(active_devices) + len(active_outlets)):
+                active_outlets[i_outlet - len(active_devices)] = int(data[i_outlet])
+            water_level = int(data[len(active_outlets) + len(active_devices)])
+            water_parameters[0] = float(data[-2])  # frequency of watering
+            water_parameters[1] = int(data[-1])  # volume of water
+
         try:
             server: socket = socket(AF_INET, SOCK_STREAM)
+            server.settimeout(3)
             server.connect(ADDRESS)
 
         except Exception as e:
             print(f"Error: {e}")
-            thread_socket.join()
+            # thread_socket.join()
+            stop_event.set()
+            popup_no_connection()
             exit(1)
 
+        send_to_check_updates = 'x' + '\n'
+        server.send(send_to_check_updates.encode('utf-8'))
+        received_from_request = server.recv(BUFF_SIZE)
         while not stop_event.is_set():
             try:
                 # update changes made by user to server
                 if len(parameter_change) != 0:
                     data_to_send = parameter_change + '\n'
                     server.send(data_to_send.encode('utf-8'))
-                    print(parameter_change)
                     parameter_change = ''
 
                     received_data = server.recv(BUFF_SIZE)
                     parts = received_data.decode('utf-8').split(';')
-                    for i_device in range(len(active_devices)):
-                        active_devices[i_device] = int(parts[i_device])
-                    for i_outlet in range(len(active_devices), len(active_devices) + len(active_outlets)):
-                        active_outlets[i_outlet - len(active_devices)] = int(parts[i_outlet])
-                    water_level = int(parts[len(active_outlets) + len(active_devices)])
-                    water_parameters[0] = float(parts[-2])  # frequency of watering
-                    water_parameters[1] = int(parts[-1])  # volume of water
+                    update_global_params(parts)
 
-                    # print(active_devices, active_outlets, water_level, water_parameters)
                     if main_canvas is not None:
                         draw_dashboard()
                     time.sleep(1)
 
+                send_to_check_updates = 'x' + '\n'
+                server.send(send_to_check_updates.encode('utf-8'))
+                current_received = server.recv(BUFF_SIZE)
+                if current_received != received_from_request:
+                    parts = current_received.decode('utf-8').split(';')
+
+                    update_global_params(parts)
+                    draw_dashboard()
+                    received_from_request = current_received
+                time.sleep(1)
+
             except Exception as e:
                 print(f"Error: {e}")
-                thread_socket.join()
+                # thread_socket.join()
+                stop_event.set()
                 exit(1)
 
     stop_event = threading.Event()
@@ -352,7 +383,7 @@ def make_gui():
     window.mainloop()
 
 
-make_gui()
-
-# thread_gui = threading.Thread(target=make_gui)
-# thread_gui.start()
+try:
+    make_gui()
+except KeyboardInterrupt:
+    sys.exit(0)
