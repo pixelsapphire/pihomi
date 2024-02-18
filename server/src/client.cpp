@@ -39,7 +39,7 @@ void phm::client::send_current_state() {
     ss << _controller.get_irrigation().get_watering_delay() << ";";
     ss << _controller.get_irrigation().get_watering_volume() << "\n";
     std::string msg = ss.str();
-    write(msg);    
+    write(msg);
 }
 
 void phm::client::remove_from(std::vector<client*>& clients) {
@@ -71,14 +71,13 @@ void phm::client::handle_event(uint32_t events, std::vector<client*>& clients, s
 }
 
 void phm::client::handle_message(const std::string& msg, std::array<bool, 4>& outlets) {
-    if(msg == "o\n") {
-        if(_controller.outlets_state()) {
-            for (int i = 0; i < 4; ++i) {
+    if (msg == "o\n") {
+        if (_controller.outlets_state()) {
+            for (uint8_t i = 0; i < 4; ++i) {
                 outlets[i]=_controller.get_outlet(i).get_state();
                 _controller.get_outlet(i).set_state(false);
             }
-        } else 
-            for (int i = 0; i < 4; ++i)  _controller.get_outlet(i).set_state(outlets[i]);
+        } else for (uint8_t i = 0; i < 4; ++i) _controller.get_outlet(i).set_state(outlets[i]);
         _controller.set_outlets_state(!_controller.outlets_state());
     }
     else if (_controller.outlets_state()) {

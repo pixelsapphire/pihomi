@@ -14,9 +14,9 @@ phm::server::server(uint32_t port,std::string serial) : controller(serial) {
     _sock = socket(AF_INET, SOCK_STREAM, 0);
     if (_sock == -1) phm::error(1, errno, "socket failed");
 
-    sockaddr_in serverAddr{.sin_family=AF_INET, .sin_port=htons(short(port)), .sin_addr={INADDR_ANY}, .sin_zero={0}};
+    sockaddr_in server_address{.sin_family=AF_INET, .sin_port=htons(short(port)), .sin_addr={INADDR_ANY}, .sin_zero={0}};
     set_reuse_addr(_sock);
-    int res = bind(_sock, (sockaddr*) &serverAddr, sizeof(serverAddr));
+    int res = bind(_sock, (sockaddr*) &server_address, sizeof(server_address));
     if (res) phm::error(1, errno, "bind failed");
 
     res = listen(_sock, 1);
@@ -39,9 +39,9 @@ void phm::server::handle_event(uint32_t events) {
 
     if (events & EPOLLIN) {
         sockaddr_in client_address{};
-        socklen_t client_addressSize = sizeof(client_address);
+        socklen_t client_address_size = sizeof(client_address);
 
-        auto client_fd = accept(_sock, (sockaddr*) &client_address, &client_addressSize);
+        auto client_fd = accept(_sock, (sockaddr*) &client_address, &client_address_size);
         if (client_fd == -1) phm::error(1, errno, "accept failed");
 
         phm::info.println("new connection from: " + std::string(inet_ntoa(client_address.sin_addr)) + ":" + std::to_string(ntohs(client_address.sin_port)) + " (fd: " + std::to_string(client_fd) + ")");
@@ -95,7 +95,10 @@ void phm::server::set_state(const std::vector<std::string>& args) {
     const auto state = args[1] == "on" ? phm::logic_state::high : phm::logic_state::low;
     if (args[0] == "clock" or args[0] == "all") controller.get_clock().set_state(state);
     if (args[0] == "irrigation" or args[0] == "all") controller.get_irrigation().set_state(state);
-    if (args[0] == "outlets" or args[0] == "all") controller.set_outlets_state(state);
+    if (args[0] == "outlets" or args[0] == "all") {
+        controller.set_outlets_state(state);
+        for (uint8_t i = 0; i < 4; ++i) controller.get_outlet(i).set_state(state);
+    }
     for (uint8_t i = 0; i < 4; ++i)
         if (args[0] == "outlet." + std::to_string(i + 1) or args[0] == "all") controller.get_outlet(i).set_state(state);
     print_status({args[0].starts_with("outlet.") ? "outlets" : args[0]});
