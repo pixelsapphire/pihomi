@@ -63,11 +63,13 @@ namespace phm {
     class irrigation {
 
         static inline const std::vector<uint8_t> water_level_pins = {16, 20, 21};
+        static inline const uint8_t water_pump_pin = 24;
 
         bool on;
         float delay;
         uint32_t volume;
         std::vector<phm::gpio::pin> water_level_sensor;
+        phm::gpio::pin water_pump;
 
     public:
 
@@ -135,12 +137,8 @@ namespace phm {
         phm::clock clock;
         phm::irrigation irrigation;
         std::vector<phm::outlet> outlets;
-        bool outlets_enabled = true;
-        phm::periodic_task clock_task{std::chrono::seconds(1), [&] { clock.update_time(); }};
-        phm::periodic_task irrigation_task{
-                [&] { return std::chrono::seconds(uint64_t(irrigation.get_watering_delay() * 4)); },
-                [&] { if (irrigation.get_state() == phm::device::on) irrigation.pour_water(); }
-        };
+        bool outlets_enabled;
+        phm::periodic_task clock_task, irrigation_task;
 
     public:
 

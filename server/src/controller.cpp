@@ -1,3 +1,4 @@
+#include "console.hpp"
 #include "controller.hpp"
 
 bool phm::serial_port::is_open() const noexcept { return active; }
@@ -81,7 +82,7 @@ std::string phm::clock::status_str() const noexcept {
     return std::string(get_state() ? "enabled" : "disabled") + " (" + arduino.device() + ", " + (is_good() ? "ok" : "error") + ")";
 }
 
-phm::irrigation::irrigation() : on(true), delay(0), volume(0) {
+phm::irrigation::irrigation() : on(true), delay(0), volume(0), water_pump(water_pump_pin, phm::pin_mode::output) {
     for (uint8_t i = 0; i < 3; i++) water_level_sensor.emplace_back(phm::irrigation::water_level_pins[i], phm::pin_mode::input);
 }
 
@@ -102,7 +103,12 @@ uint32_t phm::irrigation::get_watering_volume() const noexcept { return volume; 
 
 void phm::irrigation::set_watering_volume(uint32_t watering_volume) noexcept { this->volume = watering_volume; }
 
-void phm::irrigation::pour_water() { phm::uwu(volume); }
+void phm::irrigation::pour_water() {
+    phm::info.println("Pouring " + std::to_string(volume) + "ml of water");
+    water_pump.set(phm::logic_state::high);
+    std::this_thread::sleep_for(std::chrono::milliseconds(volume * 4));
+    water_pump.set(phm::logic_state::low);
+}
 
 std::string phm::irrigation::status_str() const noexcept {
     const uint8_t level = get_water_level();
@@ -154,7 +160,12 @@ void phm::periodic_task::stop() {
     thread.join();
 }
 
-phm::controller::controller(const std::string& clock_device) : clock(clock_device) {
+phm::controller::controller(const std::string& clock_device) 
+        : clock(clock_device), outlets_enabled(true), clock_task{std::chrono::seconds(1), [&] { clock.update_time(); }},
+          irrigation_task{
+              [&] { return std::chrono::seconds(int64_t(irrigation.get_watering_delay() > 0 ? irrigation.get_watering_delay() * 4 : -1)); },
+              [&] { if (irrigation.get_state() == phm::device::on) irrigation.pour_water(); }
+          } {
     for (uint8_t i = 0; i < 4; i++) outlets.emplace_back(phm::controller::outlet_pins[i]);
     clock_task.start();
     irrigation_task.start();
