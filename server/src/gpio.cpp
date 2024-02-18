@@ -13,8 +13,10 @@ phm::gpio::pin::pin(uint8_t number, phm::pin_mode mode) : number(number), mode(m
 #include <pigpiod_if2.h>
 
 void phm::gpio::begin() {
-    std::system("sudo pigpiod; sleep 1;");
-    if ((phm::gpio::descriptor = pigpio_start(nullptr, nullptr)) < 0)
+    phm::gpio::descriptor = pigpio_start(nullptr, nullptr);
+    if (phm::gpio::descriptor < 0) std::system("sudo pigpiod; sleep 1;");
+    phm::gpio::descriptor = pigpio_start(nullptr, nullptr);
+    if (phm::gpio::descriptor < 0)
         throw std::runtime_error("Failed to connect to PiGPIO daemon: " + std::string(pigpio_error(phm::gpio::descriptor)));
 }
 
