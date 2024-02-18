@@ -12,9 +12,14 @@ OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path(r"assets")
 
 # NETWORK CONNECTION
+HOST = 'localhost'
 PORT = 3141
-HOST = "192.168.1.74"
 BUFF_SIZE = 64
+try:
+    with open('serverhost.txt', 'r') as host_file:
+        HOST = host_file.readlines()[0].rstrip()
+except:
+    print('Could not get server host from serverhost.txt; defaulting to "localhost"...')
 ADDRESS = (HOST, PORT)
 
 # INTERFACE COLORS
