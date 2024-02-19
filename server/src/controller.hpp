@@ -14,9 +14,6 @@ namespace phm {
         on = true, off = false
     };
 
-    template<typename ...Args>
-    void uwu(Args&& ...) {}
-
     class serial_port {
 
         int fd;
